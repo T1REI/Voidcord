@@ -16,24 +16,26 @@ import PluginSettings from "@components/settings/tabs/plugins";
 import SettingsPlugin from "@plugins/_core/settings";
 import { Devs } from "@utils/constants";
 import definePlugin, { PluginNative } from "@utils/types";
-import { React, TextInput, useState } from "@webpack/common";
+import { RenderModalProps } from "@vencord/discord-types";
+import { Modal, openModal, React, TextInput, useState } from "@webpack/common";
 
 const Native = VencordNative.pluginHelpers.VoidcordCustomPlugins as PluginNative<typeof import("./native")>;
 
-function CustomPluginsTab() {
+function NewPluginModal({ onClose, transitionState, onCreated }: RenderModalProps & { onCreated(folder: string): void; }) {
     const [name, setName] = useState("");
     const [author, setAuthor] = useState("");
     const [description, setDescription] = useState("");
     const [error, setError] = useState("");
-    const [created, setCreated] = useState("");
     const [busy, setBusy] = useState(false);
 
-    async function run(action: () => Promise<unknown>) {
+    async function create() {
         if (busy) return;
         setBusy(true);
         setError("");
         try {
-            await action();
+            const folder = await Native.create(name, author, description);
+            onCreated(folder);
+            onClose();
         } catch (err) {
             setError(String(err));
         } finally {
@@ -41,27 +43,53 @@ function CustomPluginsTab() {
         }
     }
 
+    return <Modal title="New empty plugin" size="small" onClose={onClose} transitionState={transitionState}>
+        <form className="vc-voidcord-custom-plugins" onSubmit={event => {
+            event.preventDefault();
+            void create();
+        }}>
+            <label>Plugin name<TextInput placeholder="MyPlugin" value={name} onChange={setName} /></label>
+            <label>Description<TextInput placeholder="What does your plugin do?" value={description} onChange={setDescription} /></label>
+            <label>Developers<TextInput placeholder="Developer one, Developer two" value={author} onChange={setAuthor} /></label>
+            <Paragraph>Separate developers with commas. Creates index.ts and a README.md development guide. Existing folders are never overwritten.</Paragraph>
+            {error && <Notice.Warning>{error}</Notice.Warning>}
+            <div className="vc-voidcord-custom-plugins-actions">
+                <Button type="submit" disabled={busy || !name.trim() || !author.trim() || !description.trim()}>{busy ? "Creating…" : "Create plugin"}</Button>
+                <Button type="button" variant="secondary" disabled={busy} onClick={onClose}>Cancel</Button>
+            </div>
+        </form>
+    </Modal>;
+}
+
+function CustomPluginsTab() {
+    const [error, setError] = useState("");
+    const [created, setCreated] = useState("");
+    const [opening, setOpening] = useState(false);
+
+    async function openFolder() {
+        setOpening(true);
+        setError("");
+        try {
+            await Native.openFolder();
+        } catch (err) {
+            setError(String(err));
+        } finally {
+            setOpening(false);
+        }
+    }
+
     return <SettingsTab>
         <div className="vc-voidcord-custom-plugins">
-        <Heading>Custom Plugins</Heading>
-        <Notice.Warning>Plugins run with access to your Discord client. Only use source code you trust.</Notice.Warning>
-        <Paragraph>Powered by Equicord's plugin API. Add plugins to src/userplugins, run pnpm build, then fully restart Discord. Patches, dependencies and native helpers use the standard Equicord lifecycle.</Paragraph>
-        <Button variant="secondary" onClick={() => VencordNative.native.openExternal("https://docs.equicord.org/installing/custom-plugin/")}>Plugin documentation</Button>
-        {!IS_STANDALONE && <>
-            <Paragraph>Create a plugin template in your local source tree. Existing folders are never overwritten.</Paragraph>
-            <TextInput placeholder="Plugin name" value={name} onChange={setName} />
-            <TextInput placeholder="Author" value={author} onChange={setAuthor} />
-            <TextInput placeholder="Description" value={description} onChange={setDescription} />
-            <Button disabled={busy || !name.trim() || !author.trim() || !description.trim()} onClick={() => void run(async () => {
-                const folder = await Native.create(name, author, description);
-                setCreated(`Created src/userplugins/${folder}/index.ts. Run pnpm build and restart Discord to load it.`);
-            })}>Create Plugin</Button>
-            <Button variant="secondary" disabled={busy} onClick={() => void run(() => Native.openFolder())}>Open Plugins Folder</Button>
-        </>}
-        {IS_STANDALONE && <Paragraph>This release can manage bundled plugins. To add plugin sources, use a local source build; runtime compilation is not supported.</Paragraph>}
-        {error && <Notice.Warning>{error}</Notice.Warning>}
-        {created && <Notice.Info>{created}</Notice.Info>}
-        <PluginSettings userPluginsOnly />
+            <Heading>Custom Plugins</Heading>
+            <Notice.Warning>Plugins run with access to your Discord client. Only use source code you trust.</Notice.Warning>
+            <div className="vc-voidcord-custom-plugins-actions">
+                <Button variant="secondary" disabled={opening} onClick={() => void openFolder()}>Open Folder</Button>
+                <Button onClick={() => openModal(props => <NewPluginModal {...props} onCreated={setCreated} />)}>New empty plugin</Button>
+            </div>
+            {IS_STANDALONE && <Paragraph>Templates are saved in the Voidcord data folder. Move them to src/userplugins in a local source build, rebuild and restart Discord to load them.</Paragraph>}
+            {error && <Notice.Warning>{error}</Notice.Warning>}
+            {created && <Notice.Info>Created {created}/index.ts and README.md. Open Folder to edit them and read the guide. A rebuild and full Discord restart are required to load the plugin.</Notice.Info>}
+            <PluginSettings userPluginsOnly />
         </div>
     </SettingsTab>;
 }

@@ -5,3 +5,9 @@
     gap: 16px;
     min-width: 0;
 }
+
+.vc-voidcord-custom-plugins-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}

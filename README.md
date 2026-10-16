@@ -39,7 +39,9 @@ Use `pnpm uninject` to uninstall. The updated installer understands `dist/deskto
 
 ## Custom plugins
 
-Open **Voidcord Settings → Custom Plugins**. It uses Equicord's own plugin cards, lifecycle, dependency handling, settings and restart requirements. Local source builds also provide a template creator and folder shortcut.
+Open **Voidcord Settings → Custom Plugins**. It uses Equicord's own plugin cards, lifecycle, dependency handling, settings and restart requirements, without the global plugin statistics and controls. **Open Folder** opens the source folder; **New empty plugin** asks for a name, description and comma-separated developers, then creates `index.ts` and a Russian `README.md` development guide without overwriting existing folders.
+
+Local source builds create templates directly in `src/userplugins`. Downloadable releases create templates in the Voidcord data directory's `userplugins` folder; move these into a local source build to compile them. Creating a template in a release does not dynamically install it.
 
 Place each plugin in `src/userplugins/myPlugin/index.ts` or `index.tsx`, run `pnpm build`, and fully restart Discord. Native helpers belong in that plugin's `native.ts`. Do not execute plugins from untrusted sources. Custom plugins are not sandboxed.
 

@@ -389,9 +389,9 @@ export default function PluginSettings({ userPluginsOnly = false }: { userPlugin
 
     return (
         <SettingsTab>
-            <ReloadRequiredCard required={changes.hasChanges} enabledPlugins={enabledPlugins} openWarningModal={openWarningModal} resetCheckAndDo={resetCheckAndDo} />
+            {(!userPluginsOnly || changes.hasChanges) && <ReloadRequiredCard required={changes.hasChanges} enabledPlugins={userPluginsOnly ? [] : enabledPlugins} openWarningModal={openWarningModal} resetCheckAndDo={resetCheckAndDo} />}
 
-            <div className={cl("stats-container")}>
+            {!userPluginsOnly && <><div className={cl("stats-container")}>
                 <StockPluginsCard
                     totalStockPlugins={totalStockPlugins}
                     enabledStockPlugins={enabledStockPlugins}
@@ -404,7 +404,7 @@ export default function PluginSettings({ userPluginsOnly = false }: { userPlugin
 
             <div className={cl("ui-elements")}>
                 <UIElementsButton />
-            </div>
+            </div></>}
 
             <HeadingTertiary className={classes(Margins.top20, Margins.bottom8)}>
                 Filters
@@ -420,7 +420,7 @@ export default function PluginSettings({ userPluginsOnly = false }: { userPlugin
                 />
             </ErrorBoundary>
 
-            <ErrorBoundary noop>
+            {!userPluginsOnly && <ErrorBoundary noop>
                 <div className={classes(Margins.bottom20, Margins.top8, cl("filter-controls"))}>
                     <Select
                         options={[
@@ -449,7 +449,7 @@ export default function PluginSettings({ userPluginsOnly = false }: { userPlugin
                         multi
                     />
                 </div>
-            </ErrorBoundary>
+            </ErrorBoundary>}
 
             <HeadingTertiary className={Margins.top20}>Plugins</HeadingTertiary>
 
@@ -467,10 +467,10 @@ export default function PluginSettings({ userPluginsOnly = false }: { userPlugin
                         )}
                     </>
                 )
-                : <ExcludedPluginsList search={search} />
+                : userPluginsOnly ? <Paragraph>No custom plugins found. Create a plugin, rebuild Voidcord and restart Discord to load it.</Paragraph> : <ExcludedPluginsList search={search} />
             }
 
-            <Divider className={Margins.top20} />
+            {(!userPluginsOnly || requiredPlugins.length > 0) && <><Divider className={Margins.top20} />
 
             <HeadingTertiary className={classes(Margins.top20, Margins.bottom8)}>
                 Required Plugins
@@ -481,7 +481,7 @@ export default function PluginSettings({ userPluginsOnly = false }: { userPlugin
                     ? requiredPlugins
                     : <Paragraph>No plugins meet the search criteria.</Paragraph>
                 }
-            </div>
+            </div></>}
         </SettingsTab >
     );
 }
