@@ -51,6 +51,9 @@ func init() {
 		}
 	}
 	Patcher = path.Join(FilesDir, "patcher.js")
+	if os.Getenv("VOIDCORD_DEV_INSTALL") != "1" && os.Getenv("VENCORD_DEV_INSTALL") != "1" {
+		Patcher = path.Join(FilesDir, "desktop.asar")
+	}
 }
 
 type DiscordInstall struct {
@@ -102,7 +105,7 @@ func (di *DiscordInstall) patch() error {
 	Log.Info("Patching " + di.path + "...")
 	if LatestHash != InstalledHash {
 		if err := InstallLatestBuilds(); err != nil {
-			return nil // already shown dialog so don't return same error again
+			return err
 		}
 	}
 

@@ -15,10 +15,8 @@ import (
 	"net/http"
 	"os"
 	path "path/filepath"
-	"strconv"
 	"strings"
-	"sync"
-	"sync/atomic"
+	"time"
 )
 
 type GithubRelease struct {
@@ -49,7 +47,7 @@ func GetGithubRelease(url, fallbackUrl string) (*GithubRelease, error) {
 
 	req.Header.Set("User-Agent", UserAgent)
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := (&http.Client{Timeout: 2 * time.Minute}).Do(req)
 	if err != nil {
 		Log.Error("Failed to send Request", err)
 		return nil, err
@@ -151,62 +149,43 @@ func installLatestBuilds() (retErr error) {
 		Log.Warn("Failed to create", pkgJsonFile, err)
 	}
 
-	var wg sync.WaitGroup
-	var downloadedFiles atomic.Uint64
-
-	for _, ass := range ReleaseData.Assets {
-		if strings.HasPrefix(ass.Name, "patcher.js") ||
-			strings.HasPrefix(ass.Name, "preload.js") ||
-			strings.HasPrefix(ass.Name, "renderer.js") ||
-			strings.HasPrefix(ass.Name, "renderer.css") {
-			wg.Add(1)
-			ass := ass // Need to do this to not have the variable be overwritten halfway through
-			go func() {
-				defer wg.Done()
-				Log.Debug("Downloading file", ass.Name)
-
-				res, err := http.Get(ass.DownloadURL)
-				if err == nil && res.StatusCode >= 300 {
-					err = errors.New(res.Status)
-				}
-				if err != nil {
-					Log.Error("Failed to download", ass.Name+":", err)
-					retErr = err
-					return
-				}
-				outFile := path.Join(FilesDir, ass.Name)
-				out, err := os.OpenFile(outFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-				if err != nil {
-					Log.Error("Failed to create", outFile+":", err)
-					retErr = err
-					return
-				}
-				read, err := io.Copy(out, res.Body)
-				if err != nil {
-					Log.Error("Failed to download to", outFile+":", err)
-					retErr = err
-					return
-				}
-				contentLength := res.Header.Get("Content-Length")
-				expected := strconv.FormatInt(read, 10)
-				if expected != contentLength {
-					err = errors.New("Unexpected end of input. Content-Length was " + contentLength + ", but I only read " + expected)
-					Log.Error(err.Error())
-					retErr = err
-					return
-				}
-				downloadedFiles.Add(1)
-			}()
+	var downloadURL string
+	for _, asset := range ReleaseData.Assets {
+		if asset.Name == "desktop.asar" {
+			downloadURL = asset.DownloadURL
+			break
 		}
 	}
-
-	wg.Wait()
-
-	if retErr != nil {
-		return retErr
+	if downloadURL == "" {
+		return errors.New("The Voidcord release is missing desktop.asar")
 	}
-	if downloadedFiles.Load() < 4 {
-		return errors.New("Couldn't find all required files")
+	res, err := (&http.Client{Timeout: 5 * time.Minute}).Get(downloadURL)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("download desktop.asar: %s", res.Status)
+	}
+	out, err := os.CreateTemp(FilesDir, "desktop-*.download")
+	if err != nil {
+		return err
+	}
+	temporary := out.Name()
+	defer os.Remove(temporary)
+	written, copyErr := io.Copy(out, res.Body)
+	closeErr := out.Close()
+	if copyErr != nil {
+		return copyErr
+	}
+	if closeErr != nil {
+		return closeErr
+	}
+	if written == 0 || (res.ContentLength >= 0 && written != res.ContentLength) {
+		return errors.New("Incomplete desktop.asar download")
+	}
+	if err := os.Rename(temporary, path.Join(FilesDir, "desktop.asar")); err != nil {
+		return err
 	}
 
 	Log.Debug("Done!")

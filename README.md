@@ -18,6 +18,8 @@ Desktop output is now `dist/desktop/` and `dist/desktop.asar`, not the old loose
 
 ## Install
 
+For the downloadable Windows release (no developer tools required), follow [WINDOWS.md](WINDOWS.md) and download the installer from [Releases](https://github.com/T1REI/Voidcord/releases/latest).
+
 Fully close Discord first. Build the updated bundled installer with Go, then install the local build:
 
 ```sh
