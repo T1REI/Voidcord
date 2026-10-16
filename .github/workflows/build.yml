@@ -1,0 +1,44 @@
+name: Build Voidcord
+on:
+    push:
+        branches: [main]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v7
+            - uses: pnpm/action-setup@v6
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm test:custom-plugins
+            - run: pnpm testTsc
+            - run: pnpm buildStandalone
+            - run: pnpm buildWebStandalone
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: voidcord-${{ github.sha }}
+                  path: dist/
+    installer:
+        runs-on: windows-latest
+        steps:
+            - uses: actions/checkout@v7
+            - uses: actions/setup-go@v6
+              with:
+                  go-version-file: Installer/go.mod
+                  cache-dependency-path: Installer/go.sum
+            - run: go test -tags cli ./...
+              working-directory: Installer
+            - run: go build -tags cli -o build/VoidcordInstallerCli-Equicord.exe .
+              working-directory: Installer
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: voidcord-installer-windows-${{ github.sha }}
+                  path: Installer/build/VoidcordInstallerCli-Equicord.exe

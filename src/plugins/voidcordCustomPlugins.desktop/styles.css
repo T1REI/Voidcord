@@ -1,0 +1,7 @@
+.vc-voidcord-custom-plugins {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    min-width: 0;
+}
