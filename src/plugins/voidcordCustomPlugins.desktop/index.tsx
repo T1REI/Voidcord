@@ -6,6 +6,7 @@
 
 import "./styles.css";
 
+import { externalPluginErrors } from "@api/ExternalPlugins";
 import { Button } from "@components/Button";
 import { Heading } from "@components/Heading";
 import { PluginsIcon } from "@components/Icons";
@@ -14,6 +15,7 @@ import { Paragraph } from "@components/Paragraph";
 import { SettingsTab, wrapTab } from "@components/settings";
 import PluginSettings from "@components/settings/tabs/plugins";
 import SettingsPlugin from "@plugins/_core/settings";
+import type { ExternalPluginStatus } from "@shared/externalPlugins";
 import { Devs } from "@utils/constants";
 import definePlugin, { PluginNative } from "@utils/types";
 import { RenderModalProps } from "@vencord/discord-types";
@@ -65,6 +67,26 @@ function CustomPluginsTab() {
     const [error, setError] = useState("");
     const [created, setCreated] = useState("");
     const [opening, setOpening] = useState(false);
+    const [statuses, setStatuses] = useState<ExternalPluginStatus[]>(() => VencordNative.customPlugins.snapshot().statuses);
+    const [trustBusy, setTrustBusy] = useState(false);
+
+    function refresh() {
+        try { setStatuses(VencordNative.customPlugins.snapshot().statuses); }
+        catch (err) { setError(String(err)); }
+    }
+
+    async function trust(status: ExternalPluginStatus) {
+        if (!status.hash || trustBusy) return;
+        setTrustBusy(true);
+        setError("");
+        try {
+            if (await VencordNative.customPlugins.trust(status.folder, status.hash, status.trusted)) {
+                refresh();
+                setCreated("Trust updated. Fully restart Discord to apply the change.");
+            }
+        } catch (err) { setError(String(err)); }
+        finally { setTrustBusy(false); }
+    }
 
     async function openFolder() {
         setOpening(true);
@@ -84,11 +106,17 @@ function CustomPluginsTab() {
             <Notice.Warning>Plugins run with access to your Discord client. Only use source code you trust.</Notice.Warning>
             <div className="vc-voidcord-custom-plugins-actions">
                 <Button variant="secondary" disabled={opening} onClick={() => void openFolder()}>Open Folder</Button>
-                <Button onClick={() => openModal(props => <NewPluginModal {...props} onCreated={setCreated} />)}>New empty plugin</Button>
+                <Button onClick={() => openModal(props => <NewPluginModal {...props} onCreated={folder => { setCreated(`Created ${folder}/index.ts and README.md. Review the source, refresh the list, trust this version and fully restart Discord.`); refresh(); }} />)}>New empty plugin</Button>
+                <Button variant="secondary" onClick={refresh}>Refresh folders</Button>
             </div>
-            {IS_STANDALONE && <Paragraph>Templates are saved in the Voidcord data folder. Move them to src/userplugins in a local source build, rebuild and restart Discord to load them.</Paragraph>}
+            <Paragraph>Source folders: Voidcord/Custom Plugins in your application data directory. TS/TSX, local imports and self-contained CSS compile automatically at startup. Review and trust each new or changed version, fully restart Discord, then enable the plugin below. No project rebuild is needed. native.ts and arbitrary npm imports are not supported.</Paragraph>
+            {statuses.map(status => <div key={status.folder}>
+                <Paragraph><strong>{status.folder}</strong> — {status.error ?? (status.trusted ? "Trusted version" : "Approval required")}</Paragraph>
+                {status.hash && <Button variant="secondary" disabled={trustBusy} onClick={() => void trust(status)}>{status.trusted ? "Revoke trust" : "Review & trust"}</Button>}
+            </div>)}
+            {externalPluginErrors.map(status => <Notice.Warning key={status.folder}>{status.folder}: {status.error}</Notice.Warning>)}
             {error && <Notice.Warning>{error}</Notice.Warning>}
-            {created && <Notice.Info>Created {created}/index.ts and README.md. Open Folder to edit them and read the guide. A rebuild and full Discord restart are required to load the plugin.</Notice.Info>}
+            {created && <Notice.Info>{created}</Notice.Info>}
             <PluginSettings userPluginsOnly />
         </div>
     </SettingsTab>;

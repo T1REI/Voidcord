@@ -31,6 +31,7 @@ export * as Webpack from "./webpack";
 export * as WebpackPatcher from "./webpack/patchWebpack";
 export { PlainSettings, Settings };
 
+import { loadExternalPlugins } from "@api/ExternalPlugins";
 import { enableStyle, initStyles } from "@api/Styles";
 import { openSettingsTabModal, UpdaterTab } from "@components/settings";
 import { debounce } from "@shared/debounce";
@@ -196,6 +197,7 @@ async function init() {
     }
 }
 
+loadExternalPlugins();
 initPluginManager();
 initStyles();
 startAllPlugins(StartAt.Init);

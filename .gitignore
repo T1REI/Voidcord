@@ -41,3 +41,23 @@ misc/bundle
 
 # intl scripts
 misc/scripts
+
+# Local AI assistant instructions and configuration
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+CODEX.md
+COPILOT.md
+.claude/
+.gemini/
+.cursor/
+.windsurf/
+.opencode/
+.cursorrules
+.windsurfrules
+.aider*
+.mcp.json
+opencode.json
+opencode.jsonc
+.github/copilot-instructions.md
+.github/instructions/

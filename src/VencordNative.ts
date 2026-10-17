@@ -9,6 +9,7 @@ import type { CspRequestResult } from "@main/csp/manager";
 import type { PluginIpcMappings } from "@main/ipcPlugins";
 import { UserThemeHeader } from "@main/themes";
 import { UpdateData } from "@main/updater";
+import type { ExternalPluginSnapshot } from "@shared/externalPlugins";
 import { IpcEvents } from "@shared/IpcEvents";
 import type { IpcRes } from "@utils/types";
 import { ipcRenderer } from "electron/renderer";
@@ -32,6 +33,10 @@ for (const [plugin, methods] of Object.entries(pluginIpcMap)) {
 }
 
 export default {
+    customPlugins: {
+        snapshot: () => sendSync<ExternalPluginSnapshot>(IpcEvents.GET_EXTERNAL_PLUGINS),
+        trust: (folder: string, hash: string, revoke = false) => invoke<boolean>(IpcEvents.TRUST_EXTERNAL_PLUGIN, folder, hash, revoke)
+    },
     themes: {
         uploadTheme: async (fileName: string, fileData: string): Promise<void> => {
             throw new Error("uploadTheme is WEB only");

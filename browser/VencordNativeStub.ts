@@ -41,6 +41,10 @@ const themeStore = DataStore.createStore("VencordThemes", "VencordThemeData");
 
 // probably should make this less cursed at some point
 window.VencordNative = {
+    customPlugins: {
+        snapshot: () => ({ plugins: [], statuses: [] }),
+        trust: async () => { throw new Error("External plugins require the desktop client"); }
+    },
     themes: {
         uploadTheme: (fileName: string, fileData: string) => DataStore.set(fileName, fileData, themeStore),
         deleteTheme: (fileName: string) => DataStore.del(fileName, themeStore),

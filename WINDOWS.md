@@ -49,4 +49,10 @@ The commands are alternatives, not a sequence to execute together. Back up `%APP
 - `extension-chrome.zip`, `extension-firefox.zip`: browser extension builds, not needed for desktop Discord.
 - `SHA256SUMS.txt`: checksums for the release downloads.
 
-Custom plugin source installation requires a local source build (`src/userplugins`, rebuild and full restart). The downloadable release does not compile arbitrary plugin sources at runtime.
+## Custom Plugins
+
+Open **Voidcord Settings → Custom Plugins → Open Folder**. Plugins live in `%APPDATA%\Voidcord\Custom Plugins`, one folder per plugin. TS/TSX and supported local imports compile automatically; a source checkout and developer tools are not required.
+
+After adding a plugin, click **Refresh folders**, review its source and choose **Review & trust**. Fully restart Discord, enable the plugin and restart again when prompted. Source changes require approval again. This is not hot reload and plugins are not sandboxed. `native.ts`, arbitrary npm modules and some Equicord imports are unsupported. See [CUSTOM-PLUGINS.md](CUSTOM-PLUGINS.md).
+
+Personal plugins are not bundled with Voidcord. Existing templates in `%APPDATA%\Voidcord\userplugins` are not migrated automatically. Back them up and copy compatible plugins into the new folder yourself. Do not keep the same plugin in both an external folder and a local source build.

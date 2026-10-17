@@ -4,22 +4,14 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { DATA_DIR } from "@main/utils/constants";
+import { EXTERNAL_PLUGINS_DIR } from "@main/externalPlugins";
 import { createPluginTemplate } from "@shared/customPlugins";
 import { IpcMainInvokeEvent, shell } from "electron";
-import { mkdir, readFile, writeFile } from "fs/promises";
-import { join, resolve } from "path";
+import { mkdir, writeFile } from "fs/promises";
+import { join } from "path";
 
 async function getSourceDirectory() {
-    if (IS_STANDALONE) {
-        const directory = join(DATA_DIR, "userplugins");
-        await mkdir(directory, { recursive: true });
-        return directory;
-    }
-    const root = resolve(__dirname, "../..");
-    const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
-    if (pkg.name !== "voidcord") throw new Error("Voidcord source directory could not be located");
-    const directory = join(root, "src", "userplugins");
+    const directory = EXTERNAL_PLUGINS_DIR;
     await mkdir(directory, { recursive: true });
     return directory;
 }

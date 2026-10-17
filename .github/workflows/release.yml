@@ -5,7 +5,7 @@ on:
             tag:
                 description: Immutable release tag
                 required: true
-                default: v0.1.0-equicord
+                default: v0.2.0
 permissions:
     contents: write
 jobs:
@@ -42,10 +42,11 @@ jobs:
                   Copy-Item dist/desktop.asar,dist/equibop.asar,dist/extension-chrome.zip,dist/extension-firefox.zip release/
                   Copy-Item Installer/build/VoidcordInstallerCli.exe release/
                   Copy-Item WINDOWS.md release/INSTALL-Windows.md
+                  Copy-Item CUSTOM-PLUGINS.md release/CUSTOM-PLUGINS.md
                   Compress-Archive -Path dist/desktop/* -DestinationPath release/Voidcord-Desktop.zip
                   $files = Get-ChildItem release -File | Sort-Object Name
                   $files | ForEach-Object { "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(), $_.Name } | Set-Content release/SHA256SUMS.txt -Encoding ascii
-                  gh release create $env:RELEASE_TAG --verify-tag --title "Voidcord Equicord $env:GITHUB_SHA" --notes-file WINDOWS.md --draft release/*
+                  gh release create $env:RELEASE_TAG --verify-tag --title "Voidcord $env:RELEASE_TAG — External Custom Plugins" --notes-file RELEASE-NOTES.md --draft release/*
                   if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }
                   gh release edit $env:RELEASE_TAG --draft=false --latest
                   if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }

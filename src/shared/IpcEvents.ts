@@ -17,6 +17,8 @@
 */
 
 export const enum IpcEvents {
+    GET_EXTERNAL_PLUGINS = "VoidcordGetExternalPlugins",
+    TRUST_EXTERNAL_PLUGIN = "VoidcordTrustExternalPlugin",
     INIT_FILE_WATCHERS = "VencordInitFileWatchers",
     QUICK_CSS_UPDATE = "VencordQuickCssUpdate",
     OPEN_QUICKCSS = "VencordOpenQuickCss",
